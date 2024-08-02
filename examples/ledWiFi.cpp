@@ -27,7 +27,7 @@ String generateHTML(bool ledStatus) {
 	html +="<title>LED Control</title>";
 	html +="<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}";
 	html +="body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}";
-	html +=".button {display: block;width: 120px;background-color: #1abc9c;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}";
+	html +=".button {display: block;width: 80px;background-color: #1abc9c;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}";
 	html +=".button-on {background-color: #1abc9c;}";
 	html +=".button-on:active {background-color: #16a085;}";
 	html +=".button-off {background-color: #34495e;}";
@@ -41,9 +41,9 @@ String generateHTML(bool ledStatus) {
 	html +="<p>LED Status: " + ledState + "</p>";
 
 	if(ledStatus)
-		html +="<a class='button button-on' href='/ledOff'>Turn Off</a>";
+		html +="<a class='button button-on' href='/ledOff'>ON</a>";
 	else
-		html +="<a class='button button-off' href='/ledOn'>Turn On</a>";
+		html +="<a class='button button-off' href='/ledOn'>OFF</a>";
 
 	html +="</body>";
 	html +="</html>";
@@ -52,18 +52,20 @@ String generateHTML(bool ledStatus) {
 
 // Обработчик для главной страницы
 void onConnect() {
+	LEDstatus = !LEDstatus;
+	//digitalWrite(LEDpin, LEDstatus);
 	String html = generateHTML(LEDstatus);
 	server.send(200, "text/html", html); // Отправка HTML страницы в браузер клиента
 }
 
 // Обработчики для включения и выключения светодиода
 void ledOn() {
-	LEDstatus = HIGH;
+	//LEDstatus = HIGH;
 	onConnect();
 }
 
 void ledOff() {
-	LEDstatus = LOW;
+	//LEDstatus = LOW;
 	onConnect();
 }
 
