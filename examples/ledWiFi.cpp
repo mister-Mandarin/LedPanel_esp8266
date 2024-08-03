@@ -95,5 +95,5 @@ void setup() {
 void loop() {
 	dnsServer.processNextRequest();    // Обработка запросов DNS для Captive Portal
 	server.handleClient();             // Обработка входящих HTTP-запросов от клиентов
-	digitalWrite(LEDpin, LEDstatus);
+	digitalWrite(LEDpin, !LEDstatus);
 }

@@ -1,6 +1,9 @@
 #include <ESP8266WiFi.h>      // Библиотека для работы с Wi-Fi на ESP8266
 #include <ESP8266WebServer.h> // Библиотека для создания веб-сервера на ESP8266
 #include <DNSServer.h>        // Библиотека для создания DNS сервера, необходимого для Captive Portal
+#include <LittleFS.h>		  // Библиотека для работы с файловой системой
+// Загрузить файлы из папки data: pio run --target uploadfs
+
 
 /* Установка своих SSID и пароль */
 const char* ssid = "LedPanel";
@@ -12,86 +15,60 @@ IPAddress gateway(192,168,1,1);
 IPAddress subnet(255,255,255,0);
 
 // Создание объекта веб-сервера и DNS-сервера
-ESP8266WebServer server(80);
+ESP8266WebServer webServer(80);
 DNSServer dnsServer;
 
 uint8_t LEDpin = 2;
 bool LEDstatus = LOW;
 
-// Функция генерации HTML страницы
-String generateHTML(bool ledStatus) {
-	String ledState = ledStatus ? "ON" : "OFF";
-
-	String html = "<!DOCTYPE html> <html>";
-	html +="<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">";
-	html +="<title>LED Control</title>";
-	html +="<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}";
-	html +="body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}";
-	html +=".button {display: block;width: 120px;background-color: #1abc9c;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}";
-	html +=".button-on {background-color: #1abc9c;}";
-	html +=".button-on:active {background-color: #16a085;}";
-	html +=".button-off {background-color: #34495e;}";
-	html +=".button-off:active {background-color: #2c3e50;}";
-	html +="p {font-size: 14px;color: #888;margin-bottom: 10px;}";
-	html +="</style>";
-	html +="</head>";
-	html +="<body>";
-	html +="<h1>ESP8266 Web Server</h1>";
-	html +="<h3>Using Access Point(AP) Mode</h3>";
-	html +="<p>LED Status: " + ledState + "</p>";
-
-	if(ledStatus)
-		html +="<a class='button button-on' href='/ledOff'>Turn Off</a>";
-	else
-		html +="<a class='button button-off' href='/ledOn'>Turn On</a>";
-
-	html +="</body>";
-	html +="</html>";
-	return html;
+void generateHTML() {
+  File file = LittleFS.open("/index.html", "r");
+  if (!file) {
+    webServer.send(500, "text/plain", "Ошибка загрузки файла");
+    return;
+  }
+  
+  String html = file.readString();
+  webServer.send(200, "text/html", html);
+  file.close();
 }
 
-// Обработчик для главной страницы
-void onConnect() {
-	String html = generateHTML(LEDstatus);
-	server.send(200, "text/html", html); // Отправка HTML страницы в браузер клиента
-}
-
-// Обработчики для включения и выключения светодиода
-void ledOn() {
-	LEDstatus = HIGH;
-	onConnect();
-}
-
-void ledOff() {
-	LEDstatus = LOW;
-	onConnect();
+void handleControl() {
+  String active = webServer.arg("active");
+  if (active == "1") {
+	digitalWrite(LEDpin, LOW);
+  } else {
+	digitalWrite(LEDpin, HIGH);
+  }
+  webServer.send(200, "text/html", "Состояние изменено");
 }
 
 void setup() {
-	// Инициализация последовательного соединения с компьютером на скорости 115200 бод
 	Serial.begin(115200);
-	// Установка пина D7 в режим вывода (OUTPUT), чтобы можно было управлять светодиодом
+
 	pinMode(LEDpin, OUTPUT);
-	// Создание точки доступа Wi-Fi с заданными SSID и паролем
+	digitalWrite(LEDpin, !LEDstatus);
+
 	WiFi.softAP(ssid, password);
-	// Конфигурация IP, шлюза и маски подсети для точки доступа
 	WiFi.softAPConfig(local_ip, gateway, subnet);
-	// Небольшая задержка в 100 мс, чтобы дать время на настройку Wi-Fi
 	delay(500);
 
-	// Запуск DNS-сервера и перенаправление всех доменов на IP ESP8266
-	dnsServer.start(53, "*", local_ip);
+	// Инициализация файловой системы
+	if (!LittleFS.begin()) {
+		Serial.println("Ошибка монтирования LittleFS");
+		return;
+	}
 
-	server.on("/", onConnect);  // Определение обработчика для главной страницы "/", который срабатывает при подключении к серверу
-	server.on("/ledOn", ledOn);  // Определение обработчика для запроса "/led1on", включающего первый светодиод
-	server.on("/ledOff", ledOff); // Определение обработчика для запроса "/led1off", выключающего первый светодиод
-	server.onNotFound(onConnect);  // Перенаправление всех несуществующих страниц на главную страницу
+	dnsServer.start(53, "*", local_ip);
 	
-	server.begin();                    // Запуск веб-сервера
+	webServer.on("/", generateHTML);
+	webServer.on("/update", handleControl);
+	webServer.onNotFound(generateHTML);
+
+	webServer.begin();
 }
 
 void loop() {
-	dnsServer.processNextRequest();    // Обработка запросов DNS для Captive Portal
-	server.handleClient();             // Обработка входящих HTTP-запросов от клиентов
-	digitalWrite(LEDpin, LEDstatus);
+	dnsServer.processNextRequest();
+	webServer.handleClient();
 }
