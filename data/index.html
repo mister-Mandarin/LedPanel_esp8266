@@ -3,27 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="styles.css">
   <title>Управление светодиодом</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-    .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
-    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
-    input:checked + .slider { background-color: #2196F3; }
-    input:checked + .slider:before { transform: translateX(26px); }
-  </style>
 </head>
 <body>
-  <h2>Control LED</h2>
+  <h2>Handle ON/OFF</h2>
   <label class='switch'>
-    <input type='checkbox' id='ledControl' onchange='sendData()'>
+    <input type='checkbox' id='handleControl' onchange='sendData()'>
     <span class='slider'></span>
   </label>
+  <h2>Blinking</h2>
+  <label class='switch'>
+    <input type='checkbox' id='blinking' onchange='sendData()'>
+    <span class='slider'></span>
+  </label>
+
+  <fieldset onchange="sendData()">
+    <legend>Выберите режим работы: </legend>
+    <div>
+      <input type="radio" id="off" name="led" value="0" checked/>
+      <label for="off">OFF</label>
+    </div>
+
+    <div>
+      <input type="radio" id="on" name="led" value="1" />
+      <label for="on">ON</label>
+    </div> 
+
+    <div>
+      <input type="radio" id="blink" name="led" value="2" />
+      <label for="blink">Blnk</label>
+    </div>
+  </fieldset>
   <script>
+    // const handleControl = document.getElementById('handleControl'); 
+    // const blinking = document.getElementById('blinking');
     function sendData() {
-      const state = document.getElementById('ledControl').checked ? 1 : 0;
-      fetch('/update?active=' + state)
+      const led = document.querySelector('input[name="led"]:checked').value;
+
+      fetch('/update?active=' + Number(led))
         .then(response => response.text())
         .then(data => console.log(data));
     }

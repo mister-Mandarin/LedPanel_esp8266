@@ -2,6 +2,7 @@
 #include <ESP8266WebServer.h> // Библиотека для создания веб-сервера на ESP8266
 #include <DNSServer.h>        // Библиотека для создания DNS сервера, необходимого для Captive Portal
 #include <LittleFS.h>		  // Библиотека для работы с файловой системой
+#include <handleControl.h>
 // Загрузить файлы из папки data: pio run --target uploadfs
 
 
@@ -22,32 +23,36 @@ uint8_t LEDpin = 2;
 bool LEDstatus = LOW;
 
 void generateHTML() {
-  File file = LittleFS.open("/index.html", "r");
-  if (!file) {
+  File fileHTML = LittleFS.open("/index.html", "r");
+  if (!fileHTML) {
     webServer.send(500, "text/plain", "Ошибка загрузки файла");
     return;
   }
   
-  String html = file.readString();
+  String html = fileHTML.readString();
+
   webServer.send(200, "text/html", html);
-  file.close();
+  fileHTML.close();
 }
 
-void handleControl() {
-  String active = webServer.arg("active");
-  if (active == "1") {
-	digitalWrite(LEDpin, LOW);
-  } else {
-	digitalWrite(LEDpin, HIGH);
-  }
-  webServer.send(200, "text/html", "Состояние изменено");
+void generateCSS() {
+  File fileCSS = LittleFS.open("/styles.css", "r");
+  if (!fileCSS) {
+	webServer.send(404, "text/plain", "CSS файл не найден");
+	return;
+	}
+	
+	String css = fileCSS.readString();
+
+  webServer.send(200, "text/css", css);
+  fileCSS.close();
 }
 
 void setup() {
 	Serial.begin(115200);
 
 	pinMode(LEDpin, OUTPUT);
-	digitalWrite(LEDpin, !LEDstatus);
+	//digitalWrite(LEDpin, !LEDstatus);
 
 	WiFi.softAP(ssid, password);
 	WiFi.softAPConfig(local_ip, gateway, subnet);
@@ -62,7 +67,10 @@ void setup() {
 	dnsServer.start(53, "*", local_ip);
 	
 	webServer.on("/", generateHTML);
-	webServer.on("/update", handleControl);
+	webServer.on("/styles.css", generateCSS);
+	webServer.on("/update", []() {
+		handleControl(LEDpin);
+		});
 	webServer.onNotFound(generateHTML);
 
 	webServer.begin();
