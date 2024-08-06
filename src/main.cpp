@@ -19,9 +19,6 @@ IPAddress subnet(255,255,255,0);
 ESP8266WebServer webServer(80);
 DNSServer dnsServer;
 
-uint8_t LEDpin = 2;
-bool LEDstatus = LOW;
-
 void generateHTML() {
   File fileHTML = LittleFS.open("/index.html", "r");
   if (!fileHTML) {
@@ -50,9 +47,9 @@ void generateCSS() {
 
 void setup() {
 	Serial.begin(115200);
+	delay(10);
 
-	pinMode(LEDpin, OUTPUT);
-	//digitalWrite(LEDpin, !LEDstatus);
+	initLed();
 
 	WiFi.softAP(ssid, password);
 	WiFi.softAPConfig(local_ip, gateway, subnet);
@@ -68,9 +65,7 @@ void setup() {
 	
 	webServer.on("/", generateHTML);
 	webServer.on("/styles.css", generateCSS);
-	webServer.on("/update", []() {
-		handleControl(LEDpin);
-		});
+	webServer.on("/update", handleControl);
 	webServer.onNotFound(generateHTML);
 
 	webServer.begin();
@@ -79,4 +74,5 @@ void setup() {
 void loop() {
 	dnsServer.processNextRequest();
 	webServer.handleClient();
+	blinkLed();
 }

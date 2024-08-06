@@ -5,6 +5,8 @@
 
 extern ESP8266WebServer webServer; // Объявите webServer как внешнюю переменную
 
-void handleControl(uint8_t LEDpin);
+void initLed();
+void handleControl();
+void blinkLed();
 
 #endif
