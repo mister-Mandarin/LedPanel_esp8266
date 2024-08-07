@@ -7,17 +7,6 @@
   <title>Управление светодиодом</title>
 </head>
 <body>
-  <h2>Handle ON/OFF</h2>
-  <label class='switch'>
-    <input type='checkbox' id='handleControl' onchange='sendData()'>
-    <span class='slider'></span>
-  </label>
-  <h2>Blinking</h2>
-  <label class='switch'>
-    <input type='checkbox' id='blinking' onchange='sendData()'>
-    <span class='slider'></span>
-  </label>
-
   <fieldset onchange="sendData()">
     <legend>Выберите режим работы: </legend>
     <div>
@@ -36,8 +25,6 @@
     </div>
   </fieldset>
   <script>
-    // const handleControl = document.getElementById('handleControl'); 
-    // const blinking = document.getElementById('blinking');
     function sendData() {
       const led = document.querySelector('input[name="led"]:checked').value;
 

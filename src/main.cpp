@@ -1,19 +1,9 @@
-#include <ESP8266WiFi.h>      // Библиотека для работы с Wi-Fi на ESP8266
 #include <ESP8266WebServer.h> // Библиотека для создания веб-сервера на ESP8266
 #include <DNSServer.h>        // Библиотека для создания DNS сервера, необходимого для Captive Portal
 #include <LittleFS.h>		  // Библиотека для работы с файловой системой
 #include <handleControl.h>
+#include <WifiConnection.h>
 // Загрузить файлы из папки data: pio run --target uploadfs
-
-
-/* Установка своих SSID и пароль */
-const char* ssid = "LedPanel";
-const char* password = "12345678";
-
-/* Настройки IP адреса */
-IPAddress local_ip(192,168,1,1);
-IPAddress gateway(192,168,1,1);
-IPAddress subnet(255,255,255,0);
 
 // Создание объекта веб-сервера и DNS-сервера
 ESP8266WebServer webServer(80);
@@ -51,9 +41,7 @@ void setup() {
 
 	initLed();
 
-	WiFi.softAP(ssid, password);
-	WiFi.softAPConfig(local_ip, gateway, subnet);
-	delay(500);
+	WifiConnection();
 
 	// Инициализация файловой системы
 	if (!LittleFS.begin()) {
@@ -61,7 +49,7 @@ void setup() {
 		return;
 	}
 
-	dnsServer.start(53, "*", local_ip);
+	dnsServer.start(53, "*", IPAddress(192,168,1,1));
 	
 	webServer.on("/", generateHTML);
 	webServer.on("/styles.css", generateCSS);

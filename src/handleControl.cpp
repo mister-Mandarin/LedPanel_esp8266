@@ -1,4 +1,3 @@
-#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <handleControl.h>
 
@@ -11,6 +10,8 @@ const long interval = 500;
 void initLed() {
   pinMode(LEDpin, OUTPUT);
   digitalWrite(LEDpin, !LEDstatus);
+  Serial.print("LEDstatus = ");
+  Serial.println(LEDstatus);
 }
 
 void blinkLed() {
@@ -22,8 +23,6 @@ void blinkLed() {
       int ledState = digitalRead(LEDpin);
       digitalWrite(LEDpin, !ledState);
     }
-  } else {
-    digitalWrite(LEDpin, !LEDstatus);
   }
 }
 
@@ -33,12 +32,12 @@ void handleControl() {
   
   switch (stateActive) {
   case 0:
-    digitalWrite(LEDpin, HIGH);
     ledBlinking = false;
+    digitalWrite(LEDpin, HIGH);
     break;
   case 1:
-    digitalWrite(LEDpin, LOW);
     ledBlinking = false;
+    digitalWrite(LEDpin, LOW);
     break;
   case 2:
     ledBlinking = true;
