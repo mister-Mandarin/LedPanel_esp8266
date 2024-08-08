@@ -1,66 +1,103 @@
-#include <ESP8266WebServer.h> // Библиотека для создания веб-сервера на ESP8266
-#include <DNSServer.h>        // Библиотека для создания DNS сервера, необходимого для Captive Portal
-#include <LittleFS.h>		  // Библиотека для работы с файловой системой
-#include <handleControl.h>
-#include <WifiConnection.h>
-// Загрузить файлы из папки data: pio run --target uploadfs
+#include <PxMatrix.h>
+#include <Ticker.h>
 
-// Создание объекта веб-сервера и DNS-сервера
-ESP8266WebServer webServer(80);
-DNSServer dnsServer;
+Ticker display_ticker;
+#define P_LAT 16
+#define P_A 5
+#define P_B 4
+#define P_C 15
+#define P_D 12
+#define P_E 0
+#define P_OE 2
 
-void generateHTML() {
-  File fileHTML = LittleFS.open("/index.html", "r");
-  if (!fileHTML) {
-    webServer.send(500, "text/plain", "Ошибка загрузки файла");
-    return;
-  }
-  
-  String html = fileHTML.readString();
+#define matrix_width 64
+#define matrix_height 64
 
-  webServer.send(200, "text/html", html);
-  fileHTML.close();
+// This defines the 'on' time of the display is us. The larger this number,
+// the brighter the display. If too large the ESP will crash
+uint8_t display_draw_time=10; //30-70 is usually fine
+
+PxMATRIX display(64,64,P_LAT, P_OE,P_A,P_B,P_C,P_D,P_E);
+
+// Some standard colors
+uint16_t myRED = display.color565(255, 0, 0);
+uint16_t myGREEN = display.color565(0, 255, 0);
+uint16_t myBLUE = display.color565(0, 0, 255);
+uint16_t myWHITE = display.color565(255, 255, 255);
+uint16_t myYELLOW = display.color565(255, 255, 0);
+uint16_t myCYAN = display.color565(0, 255, 255);
+uint16_t myMAGENTA = display.color565(255, 0, 255);
+uint16_t myBLACK = display.color565(0, 0, 0);
+
+uint16_t myCOLORS[8]={myRED,myGREEN,myBLUE,myWHITE,myYELLOW,myCYAN,myMAGENTA,myBLACK};
+
+// ISR for display refresh
+void display_updater() {
+  display.display(display_draw_time);
 }
 
-void generateCSS() {
-  File fileCSS = LittleFS.open("/styles.css", "r");
-  if (!fileCSS) {
-	webServer.send(404, "text/plain", "CSS файл не найден");
-	return;
-	}
-	
-	String css = fileCSS.readString();
-
-  webServer.send(200, "text/css", css);
-  fileCSS.close();
+void display_update_enable(bool is_enable) {
+  if (is_enable)
+    display_ticker.attach(0.004, display_updater);
+  else
+    display_ticker.detach();
 }
 
 void setup() {
 	Serial.begin(115200);
-	delay(10);
+	display.begin(32);
 
-	initLed();
+  display_update_enable(true);
 
-	WifiConnection();
-
-	// Инициализация файловой системы
-	if (!LittleFS.begin()) {
-		Serial.println("Ошибка монтирования LittleFS");
-		return;
-	}
-
-	dnsServer.start(53, "*", IPAddress(192,168,1,1));
-	
-	webServer.on("/", generateHTML);
-	webServer.on("/styles.css", generateCSS);
-	webServer.on("/update", handleControl);
-	webServer.onNotFound(generateHTML);
-
-	webServer.begin();
+  // delay(3000);
 }
 
 void loop() {
-	dnsServer.processNextRequest();
-	webServer.handleClient();
-	blinkLed();
+  display.clearDisplay();
+
+  /*!
+  x\y 0 1 2 3 4 5 6 ... 63
+  0
+  1
+  2
+  3
+  4
+  ...
+  63
+
+	display.drawLine(0, 0, 10, 0, display.color565(0, 255, 0));
+	@param    x0  Start point x coordinate
+	@param    y0  Start point y coordinate
+	@param    x1  End point x coordinate
+	@param    y1  End point y coordinate
+	@param    color 16-bit 5-6-5 Color to draw with 
+	
+	*/
+
+// bool flag = false;
+
+for (int offset = 0; offset < matrix_width; offset++) {
+  for (int xx = 0; xx < 16; xx++) {
+    display.drawLine(xx + offset, 0, xx + offset, 2, display.color565(0, xx * 16, 0));
+
+	if (offset > matrix_width - 16) {
+		display.drawLine(xx + (offset - matrix_width), 0, xx + (offset - matrix_width), 2, display.color565(0, xx * 16, 0));
+	}
+}
+
+  delay(40); // задержка для видимого перемещения
+  display.clearDisplay(); // очистка экрана перед следующей итерацией
+}
+
+
+//   for (uint8_t dimm=255; dimm>0; dimm--) {
+//     display.setBrightness(dimm);
+//     delay(5);
+//   }
+
+//   for (uint8_t dimm=0; dimm<255; dimm++) {
+//     display.setBrightness(dimm);
+//     delay(5);
+//   }
+
 }
