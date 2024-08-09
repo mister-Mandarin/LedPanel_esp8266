@@ -15,7 +15,7 @@ Ticker display_ticker;
 
 // This defines the 'on' time of the display is us. The larger this number,
 // the brighter the display. If too large the ESP will crash
- uint8_t display_draw_time=30; //30-70 is usually fine
+ uint8_t display_draw_time=5; //30-70 is usually fine
 
 PxMATRIX display(64,64,P_LAT, P_OE,P_A,P_B,P_C,P_D,P_E);
 
@@ -85,28 +85,30 @@ default:
 }
 }
 
-void generateLineSegmentXY(short lineLength, short lineHeight, short rotate, int offset) {
+void generateLineSegmentXY(int lineLength, int lineHeight, int rotate, int offset) {
+
   rotateLine(rotate);
 
-  for (short xx = 0; xx < lineLength; xx++) {
-    display.drawLine(xx + offset, 0, xx + offset, lineHeight - 1, getLineColor(xx, lineLength));
+  for (int xx = 0; xx < lineLength; xx++) {
+    display.drawLine(xx + offset, 0, xx + offset, lineHeight-1, getLineColor(xx, lineLength));
 
-    if (offset > matrix_width - lineLength ) {
-      short x0 = xx + (offset - matrix_width);
-      display.drawLine(x0 + lineHeight - 1, 0, x0 + lineHeight - 1, lineHeight - 1, getLineColor(xx, lineLength));
+    if (offset > matrix_width - lineLength) {
+      display.drawLine(xx + (offset - matrix_width), 0, xx + (offset - matrix_width), lineHeight-1, getLineColor(xx, lineLength));
     }
   }
+
+  yield();
 }
 
-void generateLineSegmentYX(short lineLength, short lineHeight, short rotate, short offset) {
+void generateLineSegmentYX(int lineLength, int lineHeight, int rotate, int offset) {
 
   rotateLine(rotate);
 
-  for (short yy = 0; yy < lineLength; yy++) {
+  for (int yy = 0; yy < lineLength; yy++) {
     display.drawLine(0, yy + offset, lineHeight-1, yy + offset, getLineColor(yy, lineLength));
 
     if (offset > matrix_width - lineLength) {
-      display.drawLine(0, yy + lineHeight - 1 + offset - matrix_width, lineHeight-1, yy + lineHeight - 1 + offset - matrix_width, getLineColor(yy, lineLength));
+      display.drawLine(0, yy + (offset - matrix_width), lineHeight-1, yy + (offset - matrix_width), getLineColor(yy, lineLength));
     }
   }
 
@@ -118,8 +120,6 @@ void setup() {
 	display.begin(32);
 
   display_update_enable(true);
-
-  delay(3000);
 }
 
 void loop() {
@@ -128,25 +128,25 @@ void loop() {
 
   if (currentTime - lastTime1 >= 40) {
     lastTime1 = currentTime;
-    generateLineSegmentYX(30, 3, 0, offset1);
+    generateLineSegmentYX(40, 3, 0, offset1);
     offset1 = (offset1 + 1) % matrix_width;
   }
 
   if (currentTime - lastTime2 >= 40) {
     lastTime2 = currentTime;
-    generateLineSegmentYX(30, 3, 90, offset2);
+    generateLineSegmentYX(44, 3, 90, offset2);
     offset2 = (offset2 + 1) % matrix_width;
   }
 
   if (currentTime - lastTime3 >= 40) {
     lastTime3 = currentTime;
-    generateLineSegmentXY(30, 3, 180, offset3);
+    generateLineSegmentXY(44, 3, 180, offset3);
     offset3 = (offset3 + 1) % matrix_width;
   }
 
-  if (currentTime - lastTime4 >= 40) {
+    if (currentTime - lastTime4 >= 40) {
     lastTime4 = currentTime;
-    generateLineSegmentXY(30, 3, 270, offset4);
+    generateLineSegmentXY(40, 3, 270, offset4);
     offset4 = (offset4 + 1) % matrix_width;
   }
 
