@@ -1,6 +1,7 @@
 #include <PxMatrix.h>
 #include <Ticker.h>
 #include <imageHome.h>
+#include <imageFox.h>
 
 Ticker display_ticker;
 #define P_LAT 16
@@ -16,7 +17,7 @@ Ticker display_ticker;
 
 // This defines the 'on' time of the display is us. The larger this number,
 // the brighter the display. If too large the ESP will crash
- uint8_t display_draw_time=5; //30-70 is usually fine
+ uint8_t display_draw_time=30; //30-70 is usually fine
 
 PxMATRIX display(64,64,P_LAT, P_OE,P_A,P_B,P_C,P_D,P_E);
 
@@ -149,7 +150,7 @@ void setup() {
 	Serial.begin(115200);
 	display.begin(32);
 
-  displayImage(imageHome);
+  displayImage(imageFox);
 
   display_update_enable(true);
 }
